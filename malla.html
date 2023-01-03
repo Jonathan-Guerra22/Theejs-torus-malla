@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Primitivos - Primera tarea three.js</title>
+    <style>
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <input type="file" name="files[]" id="files"></input>
+
+    <script type="importmap">{
+        "imports": {
+            "three": "https://threejs.org/build/three.module.js"
+        }
+    }</script><!-- Remove this when import maps will be widely supported -->
+        <script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
+    
+        <script type="module">
+    
+            import * as THREE from 'three';
+            import { OrbitControls } from 'https://unpkg.com/three@0.143.0/examples/jsm/controls/OrbitControls.js';
+            import { GUI } from 'https://unpkg.com/three@0.143.0/examples/jsm/libs/lil-gui.module.min.js';
+
+        function numeroTriangulos(vertices) {
+
+            let numTriangulos = [];
+
+            for (let i = 0; i < vertices.length; i += 3) {
+                numTriangulos.push([vertices[i], vertices[i + 1], vertices[i + 2]])
+            }
+            return numTriangulos;
+        }
+
+        function verticesUnicos(vertices) {
+            let unicosParse = []
+            let repetidosParse = []
+            let returnV = []
+            for (let i of vertices) {
+
+                if (!unicos.includes(JSON.stringify(i))) {
+                    //unicos.push(JSON.stringify(i))
+                    unicosParse.push(i)
+                } else {
+                    //repetidos.push(JSON.stringify(i))
+                    repetidosParse.push(i)
+                }
+            }
+            returnV.push(unicosParse)
+            returnV.push(repetidosParse)
+            return returnV
+        }
+
+        function arregloIndices(unicos, triangulos) {
+            let ind = [];
+
+            for (let i = 0; i < unicos.length; i++) {
+                ind.push(i);
+            }
+            for (let i = 0; i < unicos.length; i++) {
+                for (let j = 0; j < triangulos.length; j++) {
+                    for (let k = 0; k < 3; k++) {
+                        if (unicos[ind[i]] == triangulos[j][k]) {
+                            triangulos[j][k] = ind[i]
+                        }
+                    }
+                }
+            }
+
+            //console.log(triangulos);
+            return triangulos;
+        }
+
+        function grafica(vertices, indices) {
+            const scene = new THREE.Scene();
+
+            var verticesGrafica = []
+            var indicesGrafica = []
+
+            for (let i of vertices) {
+                for (let j of i) {
+                    verticesGrafica.push(j)
+                }
+            }
+            console.log("vertices", verticesGrafica)
+            for (let i of indices) {
+                for (let j of i) {
+                    indicesGrafica.push(j)
+                }
+            }
+
+            // Cambio de color del background
+            // scene.background = new THREE.Color(0xffffff);
+
+            // Ajustes de la camara
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight);
+            camera.position.z = 100;
+            camera.position.y = 40;
+            camera.position.x = 100;
+
+            // Ajustes del renderizado
+            const renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            var geometry = new THREE.BufferGeometry();
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verticesGrafica), 3))
+            geometry.setIndex(indicesGrafica)
+
+            var material = new THREE.MeshBasicMaterial({
+                color: 0xFF2D00,
+            });
+
+            var dona = new THREE.Mesh(geometry, material)
+
+            scene.add(dona)
+
+            function animate() {
+
+                requestAnimationFrame(animate);
+
+                // Agregando rotaciones a las figuras en los ejes x,y,z
+                // dona.rotation.x += 0.01;
+                // dona.rotation.y += 0.01;
+                // dona.rotation.z += 0.02;
+
+
+
+            };
+            renderer.render(scene, camera);
+
+            // Llamado a la funcion para agregar la animacion de rotacion
+            animate();
+        }
+
+
+        let upload = document.getElementById('files')
+        let vertices = [];
+
+        upload.addEventListener('change', function () {
+            let fr = new FileReader()
+            fr.readAsText(upload.files[0])
+
+            //aaaaa = fr.readAsText(upload.files[0])
+
+            fr.onload = () => {
+
+
+                var lineas = fr.result.split('\n')
+                for (let linea of lineas) {
+                    linea = linea.trim()
+                    var palabras = linea.split(/\s+/)
+
+                    if (palabras.length > 0 && palabras[0] == 'vertex') {
+                        let v = []
+                        for (let i = 0; i < 3; i++) {
+                            v.push(Number(palabras[i + 1]))
+                        }
+                        vertices.push(v)
+                    }
+                }
+
+                var unicos = []
+                var repetidos = []
+
+                for (let [index, element] of vertices.entries()) {
+                    if (JSON.stringify(vertices.slice(0, index)).includes(JSON.stringify(element))) {
+                        repetidos.push(element)
+                    }
+                    if (!JSON.stringify(unicos).includes(JSON.stringify(element))) {
+                        unicos.push(element)
+                    }
+                }
+                let triangulos = []
+                for (let i = 0; i < vertices.length; i += 3) {
+                    triangulos.push([vertices[i], vertices[i + 1], vertices[i + 2]])
+                }
+
+                let ind = [];
+
+                for (let i = 0; i < unicos.length; i++) {
+                    ind.push(i);
+                }
+
+                var indices = triangulos
+
+                for (let i = 0; i < unicos.length; i++) {
+                    for (let j = 0; j < indices.length; j++) {
+                        for (let k = 0; k < 3; k++) {
+                            if (unicos[ind[i]].every((val, index) => val === indices[j][k][index])) {
+                                indices[j][k] = ind[i]
+                            }
+                        }
+                    }
+                }
+
+                grafica(unicos, triangulos)
+
+            }
+
+        })
+
+    </script>
+</body>
+
+</html>
